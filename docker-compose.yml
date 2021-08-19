@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  dev:
+    container_name: nestjs
+    build: .
+    ports:
+      - 3000:3000
+    links:
+      - postgres
+  postgres:
+    container_name: postgres
+    image: postgres
+    environment: 
+      - POSTGRES_USER=hakin-user
+      - POSTGRES_PASSWORD=hakin-password
+      - POSTGRES_DB=hakin
+    volumes: 
+      - ./mock-db:/var/lib/postgresql/data/
