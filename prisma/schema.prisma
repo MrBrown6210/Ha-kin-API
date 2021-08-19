@@ -11,22 +11,23 @@ generator client {
 }
 
 model User {
-  id String @default(uuid()) @id
-  email String @unique
-  name String
+  id       String @id @default(uuid())
+  email    String @unique
+  name     String
+  password String
 }
 
 model Restaurant {
-  id String @default(uuid()) @id
-  name String
-  slug String @unique
+  id            String   @id @default(uuid())
+  name          String
+  slug          String   @unique
   // stars Int
   // reviewers Int
-  tag String[]
-  averageCost Int
+  tag           String[]
+  averageCost   Int
   coverImageURL String
-  images String[]
-  phoneNumber String
-  address String
-  facilities String[]
+  images        String[]
+  phoneNumber   String
+  address       String
+  facilities    String[]
 }
