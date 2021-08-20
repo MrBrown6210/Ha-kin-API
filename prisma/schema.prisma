@@ -18,16 +18,29 @@ model User {
 }
 
 model Restaurant {
-  id            String   @id @default(uuid())
-  name          String
-  slug          String   @unique
+  id          String     @id @default(uuid())
+  name        String
+  slug        String     @unique
   // stars Int
   // reviewers Int
-  tag           String[]
-  averageCost   Int
-  coverImageURL String
-  images        String[]
-  phoneNumber   String
-  address       String
-  facilities    String[]
+  // tags        String[]
+  averageCost Int
+  // coverImageURL String
+  images      String[]
+  phoneNumber String
+  address     String
+  facilities  Facility[]
+  tags        Tag[]
+}
+
+model Tag {
+  id          String       @id @default(uuid())
+  title       String       @unique
+  restaurants Restaurant[]
+}
+
+model Facility {
+  id          String       @id @default(uuid())
+  title       String       @unique
+  restaurants Restaurant[]
 }
