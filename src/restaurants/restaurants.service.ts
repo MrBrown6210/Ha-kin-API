@@ -3,7 +3,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { Facility, Restaurant, Tag } from '@prisma/client';
+import { Facility, Restaurant, Tag, User } from '@prisma/client';
 import slugify from 'slugify';
 import { PrismaService } from 'src/prisma.service';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
@@ -16,26 +16,38 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 export class RestaurantsService {
   constructor(private prismaService: PrismaService) {}
 
-  convertToRestaurantInterface(
+  async convertToRestaurantInterface(
     restaurant: Restaurant & {
       facilities: Facility[];
       tags: Tag[];
     },
-  ): IRestaurant {
-    return {
+    user?: User,
+  ): Promise<IRestaurant> {
+    const favorite = await this.countFavoritesRestaurant(restaurant);
+
+    const result: IRestaurant = {
       ...restaurant,
       tags: restaurant.tags.map((tag) => tag.title),
       facilities: restaurant.facilities.map((facility) => facility.title),
-      stars: 0,
-      reviewers: 0,
+      stars: favorite.averagePoint,
+      reviewers: favorite.count,
       coverImageURL: restaurant.images[0],
     };
+
+    if (user) {
+      const point = await this.getFavoritePoint(restaurant, user);
+      result.user = { stars: point };
+    }
+
+    return result;
   }
 
   async findSlugUnique(slug: string): Promise<string> {
     const count = await this.prismaService.restaurant.count({
       where: {
-        slug,
+        slug: {
+          startsWith: slug,
+        },
       },
     });
     if (count < 1) return slug;
@@ -45,6 +57,7 @@ export class RestaurantsService {
   async create(createRestaurantDto: CreateRestaurantDto): Promise<IRestaurant> {
     const { name, tags, facilities } = createRestaurantDto;
     const slug = await this.findSlugUnique(slugify(name));
+    console.log(slug);
     const insertTags = tags.map((tag) => {
       return {
         where: {
@@ -81,7 +94,7 @@ export class RestaurantsService {
         facilities: true,
       },
     });
-    // restaurant.
+
     return this.convertToRestaurantInterface(restaurant);
   }
 
@@ -92,8 +105,10 @@ export class RestaurantsService {
         facilities: true,
       },
     });
-    const restaurantsInterface = restaurants.map((restaurant) =>
-      this.convertToRestaurantInterface(restaurant),
+    const restaurantsInterface = await Promise.all(
+      restaurants.map((restaurant) =>
+        this.convertToRestaurantInterface(restaurant),
+      ),
     );
     return restaurantsInterface;
   }
@@ -143,5 +158,68 @@ export class RestaurantsService {
       console.error(error);
       throw new InternalServerErrorException();
     }
+  }
+
+  async favorite(id: string, point: number, user: User) {
+    try {
+      const restaurant = await this.prismaService.restaurant.update({
+        where: {
+          id,
+        },
+        data: {
+          favorites: {
+            upsert: {
+              where: {
+                userId_restaurantId: {
+                  userId: user.id,
+                  restaurantId: id,
+                },
+              },
+              create: {
+                userId: user.id,
+                point,
+              },
+              update: {
+                point,
+              },
+            },
+          },
+        },
+      });
+      if (!restaurant) throw new NotFoundException();
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') throw new NotFoundException();
+        console.error(error.code);
+      }
+    }
+  }
+
+  async countFavoritesRestaurant(
+    restaurant: Restaurant,
+  ): Promise<{ count: number; averagePoint: number }> {
+    const favorites = await this.prismaService.favorite.aggregate({
+      _avg: {
+        point: true,
+      },
+      _count: true,
+      where: {
+        restaurantId: restaurant.id,
+      },
+    });
+
+    return { count: favorites._count, averagePoint: favorites._avg.point || 0 };
+  }
+
+  async getFavoritePoint(restaurant: Restaurant, user: User): Promise<number> {
+    const favorite = await this.prismaService.favorite.findUnique({
+      where: {
+        userId_restaurantId: {
+          userId: user.id,
+          restaurantId: restaurant.id,
+        },
+      },
+    });
+    return favorite.point;
   }
 }
