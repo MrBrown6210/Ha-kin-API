@@ -27,15 +27,15 @@ export class RestaurantsController {
     return this.restaurantsService.create(createRestaurantDto);
   }
 
-  // @Get()
-  // findAll(): Promise<Restaurant[]> {
-  //   return this.restaurantsService.findAll();
-  // }
+  @Get()
+  findAll(): Promise<Restaurant[]> {
+    return this.restaurantsService.findAll();
+  }
 
-  // @Get(':slug')
-  // findOne(@Param('slug') slug: string): Promise<Restaurant> {
-  //   return this.restaurantsService.findOne(slug);
-  // }
+  @Get(':slug')
+  findOne(@Param('slug') slug: string): Promise<Restaurant> {
+    return this.restaurantsService.findOne(slug);
+  }
 
   // @Patch(':slug')
   // update(
@@ -45,9 +45,9 @@ export class RestaurantsController {
   //   return this.restaurantsService.update(slug, updateRestaurantDto);
   // }
 
-  // @Delete(':slug')
-  // @HttpCode(204)
-  // remove(@Param('slug') slug: string): Promise<void> {
-  //   return this.restaurantsService.remove(slug);
-  // }
+  @Delete(':slug')
+  @HttpCode(204)
+  remove(@Param('slug') slug: string): Promise<void> {
+    return this.restaurantsService.remove(slug);
+  }
 }
