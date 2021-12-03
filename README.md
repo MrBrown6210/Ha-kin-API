@@ -3,7 +3,7 @@ Ha Kin API created for [Ha Kin](https://github.com/MrBrown6210/Ha-Kin) awesome p
 
 ## Description
 
-API Service for Ha Kin project created for fun to PoC Prisma with NestJS. It's not serious like Ha Kin front-end :3
+API Service for Ha Kin project created for fun to PoC Prisma with NestJS.
 
 ## Installation
 
